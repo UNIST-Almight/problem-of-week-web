@@ -103,7 +103,12 @@ def add_problem_request():
 
 @ app.route("/problem/list",  methods=["GET"])
 def get_problem_list():
-    problems = get_all_problems(datetime.now())
+    if not is_required_validated(["date"], request.args.keys()):
+        date = datetime.now()
+    else:
+        date = datetime.strptime(request.args["date"], "%Y-%m-%d")
+
+    problems = get_all_problems(date)
 
     if problems == None:
         return "404 NOT FOUND: there is no problems in DB", 404
