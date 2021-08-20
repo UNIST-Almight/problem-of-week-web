@@ -66,6 +66,15 @@ def get_all_problems(date):
         return None
 
 
+def is_required_validated(required_keys, request_keys):
+    '''
+    If at least one of required keys is not in request keys, return false.
+    '''
+    if set(required_keys)-set(request_keys):
+        return False
+    return True
+
+
 @ app.route("/")
 def home():
     return "This is Almight"
