@@ -89,8 +89,11 @@ def add_problem_request():
     if not arguments["token"] == SLACK_BOT_TOKEN:
         return "403 FORBIDDEN: token mismatch.", 403
 
-    problem = ProblemDTO(arguments["pid"], arguments["description"],
-                         arguments["difficulty"], arguments["category"], arguments["username"])
+    try:
+        problem = ProblemDTO(int(arguments["pid"]), str(arguments["description"]),
+                             int(arguments["difficulty"]), str(arguments["category"]), str(arguments["username"]))
+    except:
+        return "400 BAD REQUEST: arguments type mismatch.", 400
 
     if add_problem(datetime.now(), problem):
         return "201 CREATED: the problem completely added.", 201
