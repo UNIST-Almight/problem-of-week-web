@@ -33,6 +33,39 @@ def check_date():
                                   "'(pid int primary key, description text, difficulty integer, category text, username text)")
 
 
+def add_problem(date, problem):
+    '''
+    Insert problem to the target date table.
+    If the work is complete, return True.
+    '''
+    check_date()
+    try:
+        get_queue_db_cursor().execute(
+            "INSERT INTO '"+date.strftime("%Y-%m-%d")+"' VALUES(?, ?, ?, ?, ?)", problem.get_tuple())
+        return True
+    except:
+        return False
+
+
+def get_all_problems(date):
+    '''
+    Return all problems queued at date.
+    If there is no table for the date, it returns None.
+    '''
+    try:
+        cursor = get_queue_db_cursor()
+        cursor.execute("SELECT * FROM '"+date.strftime("%Y-%m-%d")+"'")
+        problem_tuples = cursor.fetchall()
+        problems = []
+        for problem_tuple in problem_tuples:
+            problems.append(ProblemDTO(
+                problem_tuple[0], problem_tuple[1], problem_tuple[2], problem_tuple[3], problem_tuple[4]))
+
+        return problems
+    except:
+        return None
+
+
 @ app.route("/")
 def home():
     return "This is Almight"
