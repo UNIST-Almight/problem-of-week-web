@@ -78,3 +78,32 @@ def is_required_validated(required_keys, request_keys):
 @ app.route("/")
 def home():
     return "This is Almight"
+
+
+@ app.route("/problem/add", methods=["POST"])
+def add_problem_request():
+    arguments = request.get_json()
+
+    if not is_required_validated(["pid", "description", "difficulty", "category", "username", "token"], arguments.keys()):
+        return "400 BAD REQUEST: missing arguments.", 400
+    if not arguments["token"] == SLACK_BOT_TOKEN:
+        return "403 FORBIDDEN: token mismatch.", 403
+
+    problem = ProblemDTO(arguments["pid"], arguments["description"],
+                         arguments["difficulty"], arguments["category"], arguments["username"])
+
+    if add_problem(datetime.now(), problem):
+        return "201 CREATED: the problem completely added.", 201
+    else:
+        return "400 BAD REQUEST: There's a problem with the request.", 400
+
+
+@ app.route("/problem/list",  methods=["GET"])
+def get_problem_list():
+    problems = get_all_problems(datetime.now())
+
+    if problems == None:
+        return "404 NOT FOUND: there is no problems in DB", 404
+
+    problems = {"results": list(map(lambda p: p.get_dict(), problems))}
+    return problems, 200
