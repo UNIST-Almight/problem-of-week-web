@@ -11,7 +11,7 @@ from dto import ProblemDTO
 
 load_dotenv()
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
-
+QUEUE_TABLE_NAME = "problem_queue"
 app = Flask(__name__)
 
 
@@ -23,40 +23,41 @@ def get_queue_db_cursor():
     return conn.cursor()
 
 
-def check_date():
+def check_table():
     '''
     Check there is the table correspons to today.
     if not, create the table.
     '''
-    today = datetime.now().strftime("%Y-%m-%d")
     get_queue_db_cursor().execute(
-        'CREATE TABLE IF NOT EXISTS "{}"(pid int primary key, description text, difficulty integer, category text, username text)'.format(today))
+        'CREATE TABLE IF NOT EXISTS "{}"(pid int primary key, description text, difficulty integer, category text, username text, timestamp text)'.format(QUEUE_TABLE_NAME))
 
 
-def add_problem(date, problem):
+def add_problem(problem):
     '''
-    Insert problem to the target date table.
+    Insert problem to the queue.
     If the id is duplicated, sqlite3.IntegrityError occurs.
     '''
-    check_date()
+    check_table()
 
     get_queue_db_cursor().execute(
-        'INSERT INTO "{}" VALUES(?, ?, ?, ?, ?)'.format(date.strftime("%Y-%m-%d")), problem.get_tuple())
+        'INSERT INTO "{}" VALUES(?, ?, ?, ?, ?, ?)'.format(QUEUE_TABLE_NAME), problem.get_tuple())
 
 
-def get_all_problems(date):
+def get_all_problems():
     '''
-    Return all problems queued at date.
-    If there is no table for the date, it returns None.
+    Return all problems queued.
+    If there is no problems, it returns None.
     '''
     try:
         cursor = get_queue_db_cursor()
-        cursor.execute('SELECT * FROM "{}"'.format(date.strftime("%Y-%m-%d")))
+
+        cursor.execute('SELECT * FROM "{}"'.format(QUEUE_TABLE_NAME))
+
         problem_tuples = cursor.fetchall()
         problems = []
         for problem_tuple in problem_tuples:
             problems.append(ProblemDTO(
-                problem_tuple[0], problem_tuple[1], problem_tuple[2], problem_tuple[3], problem_tuple[4]))
+                problem_tuple[0], problem_tuple[1], problem_tuple[2], problem_tuple[3], problem_tuple[4], problem_tuple[5]))
 
         return problems
     except:
@@ -70,6 +71,10 @@ def is_required_validated(required_keys, request_keys):
     if set(required_keys)-set(request_keys):
         return False
     return True
+
+
+def today_str():
+    return datetime.now().strftime("%Y-%m-%d")
 
 
 @ app.route("/")
@@ -89,12 +94,12 @@ def process_problems():
 
         try:
             problem = ProblemDTO(int(arguments["pid"]), str(arguments["description"]),
-                                 int(arguments["difficulty"]), str(arguments["category"]), str(arguments["username"]))
+                                 int(arguments["difficulty"]), str(arguments["category"]), str(arguments["username"]), today_str())
         except:
             return "400 BAD REQUEST: arguments type mismatch.", 400
 
         try:
-            add_problem(datetime.now(), problem)
+            add_problem(problem)
             return "201 CREATED: the problem completely added.", 201
         except sqlite3.IntegrityError:
             return "400 BAD REQUEST: Duplicated problem number.", 400
@@ -102,12 +107,7 @@ def process_problems():
             return "400 BAD REQUEST: There's a problem with the request.", 400
 
     elif request.method == "GET":
-        if not is_required_validated(["date"], request.args.keys()):
-            date = datetime.now()
-        else:
-            date = datetime.strptime(request.args["date"], "%Y-%m-%d")
-
-        problems = get_all_problems(date)
+        problems = get_all_problems()
 
         if problems == None:
             return "404 NOT FOUND: there is no problems in DB", 404
