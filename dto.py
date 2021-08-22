@@ -1,7 +1,7 @@
 from flask import json, jsonify
 
 
-class ProblemDTO:
+class Problem:
     def __init__(self, pid, description, difficulty, category, username, timestamp):
         self.pid = pid
         self.description = description

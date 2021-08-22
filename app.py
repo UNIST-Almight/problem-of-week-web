@@ -7,7 +7,7 @@ from flask import request
 
 import sqlite3
 from datetime import datetime
-from dto import ProblemDTO
+from dto import Problem
 
 load_dotenv()
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
@@ -56,7 +56,7 @@ def get_all_problems():
         problem_tuples = cursor.fetchall()
         problems = []
         for problem_tuple in problem_tuples:
-            problems.append(ProblemDTO(
+            problems.append(Problem(
                 problem_tuple[0], problem_tuple[1], problem_tuple[2], problem_tuple[3], problem_tuple[4], problem_tuple[5]))
 
         return problems
@@ -93,8 +93,8 @@ def process_problems():
             return "403 FORBIDDEN: token mismatch.", 403
 
         try:
-            problem = ProblemDTO(int(arguments["pid"]), str(arguments["description"]),
-                                 int(arguments["difficulty"]), str(arguments["category"]), str(arguments["username"]), today_str())
+            problem = Problem(int(arguments["pid"]), str(arguments["description"]),
+                              int(arguments["difficulty"]), str(arguments["category"]), str(arguments["username"]), today_str())
         except:
             return "400 BAD REQUEST: arguments type mismatch.", 400
 
