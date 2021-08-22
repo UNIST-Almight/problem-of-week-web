@@ -19,7 +19,7 @@ def get_queue_db_cursor():
     '''
     Return DB cursor of queue.
     '''
-    conn = sqlite3.connect("problem_queue.db", isolation_level=None)
+    conn = sqlite3.connect("db.sqlite3", isolation_level=None)
     return conn.cursor()
 
 
